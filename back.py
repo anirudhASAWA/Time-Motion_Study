@@ -8,17 +8,14 @@ from flask_cors import CORS
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
 
-# Directory to store project data
-DATA_DIR = 'data'
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
+# At the top of back.py
+app = Flask(__name__, static_folder='static')
 
+# Change the index route to
 @app.route('/')
 def index():
-    return send_file('index.html')
+    return send_file('static/index.html')
 
 @app.route('/api/save-project', methods=['POST'])
 def save_project():

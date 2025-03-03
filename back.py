@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 import os
 import json
 import csv
@@ -9,8 +9,8 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+app = Flask(__name__, static_folder='static')
+CORS(app)
 
 # Directory to store project data
 DATA_DIR = 'data'
@@ -19,7 +19,12 @@ if not os.path.exists(DATA_DIR):
 
 @app.route('/')
 def index():
-    return send_file('index.html')
+    return send_from_directory('static', 'index.html')
+
+
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory('static', path)
 
 @app.route('/api/save-project', methods=['POST'])
 def save_project():

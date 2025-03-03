@@ -1,0 +1,84 @@
+/* Additional custom styles beyond Tailwind */
+
+.timer-display {
+    font-family: monospace;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+  
+  .btn-start {
+    background-color: #2563eb;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn-start:hover {
+    background-color: #1d4ed8;
+  }
+  
+  .btn-stop {
+    background-color: #d97706;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn-stop:hover {
+    background-color: #b45309;
+  }
+  
+  .btn-reset {
+    background-color: #dc2626;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+  }
+  
+  .btn-reset:hover {
+    background-color: #b91c1c;
+  }
+  
+  /* Make sure the table is always visible on scroll */
+  .table-container {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  
+  /* Add box shadow to header for better visual distinction */
+  .table-header {
+    position: sticky;
+    top: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
+  }
+  
+  /* Transition effect for actions */
+  .btn-action {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .btn-action:active {
+    transform: scale(0.97);
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 640px) {
+    .timer-display {
+      font-size: 1rem;
+    }
+    
+    .timer-controls {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }

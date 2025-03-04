@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_file
 import os
 import json
 import csv
@@ -7,24 +7,64 @@ from datetime import datetime
 from flask_cors import CORS
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
+import logging
+from logging.handlers import RotatingFileHandler
+from werkzeug.middleware.proxy_fix import ProxyFix
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
 
-app = Flask(__name__, static_folder='static')
-CORS(app)
+# Configure logging
+logging.basicConfig(
+    handlers=[RotatingFileHandler('app.log', maxBytes=100000, backupCount=3)],
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Configure CORS with specific options
+CORS(app, resources={
+    r"/api/*": {
+        "origins": os.getenv('ALLOWED_ORIGINS', '*').split(','),
+        "methods": ["GET", "POST", "DELETE"],
+        "allow_headers": ["Content-Type"]
+    }
+})
+
+# Security headers
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
 
 # Directory to store project data
-DATA_DIR = 'data'
+DATA_DIR = os.getenv('DATA_DIR', 'data')
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({'error': 'Resource not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
+
 @app.route('/')
 def index():
-    return send_from_directory('static', 'index.html')
-
-
-@app.route('/<path:path>')
-def static_files(path):
-    return send_from_directory('static', path)
+    try:
+        return send_file('index.html')
+    except Exception as e:
+        logger.error(f"Error serving index.html: {str(e)}")
+        return jsonify({'error': 'Error serving index file'}), 500
 
 @app.route('/api/save-project', methods=['POST'])
 def save_project():
@@ -35,8 +75,11 @@ def save_project():
         if not data or 'projectName' not in data:
             return jsonify({'error': 'Invalid data format'}), 400
         
+        # Sanitize project name
+        project_name = "".join(c for c in data['projectName'] if c.isalnum() or c in (' ', '-', '_')).strip()
+        
         # Create a filename based on project name and timestamp
-        filename = f"{data['projectName'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        filename = f"{project_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         filepath = os.path.join(DATA_DIR, filename)
         
         # Add metadata
@@ -46,13 +89,15 @@ def save_project():
         with open(filepath, 'w') as f:
             json.dump(data, f, indent=2)
         
+        logger.info(f"Project saved successfully: {filename}")
         return jsonify({
             'message': 'Project saved successfully',
             'filename': filename
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error saving project: {str(e)}")
+        return jsonify({'error': 'Error saving project'}), 500
 
 @app.route('/api/projects', methods=['GET'])
 def list_projects():
@@ -170,5 +215,10 @@ def delete_project(filename):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('FLASK_ENV') == 'development'
+    host = os.getenv('HOST', '0.0.0.0')
+    
+    logger.info(f"Starting server on {host}:{port}")
+    app.run(host=host, port=port, debug=debug)

@@ -2,3 +2,4 @@ flask
 pandas
 psycopg2-binary
 gunicorn
+flask_sqlalchemy

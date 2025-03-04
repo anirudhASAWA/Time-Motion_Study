@@ -1,0 +1,5 @@
+FLASK_ENV=development
+PORT=5000
+HOST=0.0.0.0
+DATA_DIR=data
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5000
